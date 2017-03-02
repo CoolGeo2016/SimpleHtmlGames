@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Gluttonous Snake</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            #GSnake {
+                width: 500px;
+                height: 500px;
+                margin: 0 auto;
+                position: relative;
+            }
+            /*游戏面板*/
+            table{
+                border-collapse:collapse;
+            }
+            table tr{
+                height: 20px;
+            }
+            table td{
+                width: 20px;
+                border: 1px solid #ccc;
+            }
+            table tr:nth-child(even),table td:nth-child(even){
+                background-color: #f9f9f9;
+            }
+            /*贪吃蛇节点*/
+            .snakenode{
+                box-sizing: border-box;
+                border: 1px solid #fff;
+                width: 20px;
+                height: 20px;
+                position: absolute;
+            }
+            .fruit{
+                width: 20px;
+                height: 20px;
+                border-radius: 20px;
+                position: absolute;
+                background-color: green;
+                animation: fruitcolor 1s;
+                animation-iteration-count:infinite;
+            }
+
+            @keyframes fruitcolor
+            {
+                50%{background-color: red}
+                100%{background-color: green}
+            }
+        </style>
+    </head>
+    <body>
+        <div id="GSnake">
+        <span id="Gameinfo">提示：按任意键开始游戏 && 按"P"键暂停/继续游戏</span>
+        </div>
+        <script>
+            //构建游戏背景面板
+            var board = document.createElement("table");
+            for(var i =0;i<25;i++){
+                var trr = document.createElement("tr");
+                for(var j = 0;j<25;j++){
+                    var tdd = document.createElement("td");
+                    trr.appendChild(tdd);
+                }
+                board.appendChild(trr);
+            }
+            var gsnake = document.getElementById("GSnake");
+            var gameinfo = document.getElementById("Gameinfo");
+            gsnake.insertBefore(board,gameinfo);
+            
+            // 构建蛇身
+            var snakex = 0;
+            var snakey = 0;
+            var fruitx = 0;
+            var fruity = 0;
+            var startposition = [3,3];
+            var Snake = [];
+            var nodesize = 20;
+            var shapeSnake = function(len){
+                // 初始长度不大于22
+                len = len>22?22:len;
+                for(var i=0;i<len;i++){
+                    var snakenode = document.createElement("div");
+                    snakenode.className = "snakenode";
+                    snakenode.style.left = (startposition[0]-1+i)*nodesize + "px";
+                    snakenode.style.top = (startposition[1]-1)*nodesize + "px";
+                    snakenode.style.backgroundColor = i==len-1?"blue":"lightblue";
+                    Snake.push(snakenode);
+                    gsnake.appendChild(snakenode);
+                }
+                snakex = startposition[0]+len-1;
+                snakey = startposition[1]
+            }
+
+            var showfruit = function(){
+                var fruit = document.createElement("div");
+                fruit.className = "fruit";
+                fruitx = parseInt(Math.random()*24);
+                fruity = parseInt(Math.random()*24);
+                fruit.style.left = (fruitx)*nodesize + "px";
+                fruit.style.top = (fruity)*nodesize + "px";
+                gsnake.appendChild(fruit);
+            }
+
+            
+            // 蛇头部运动
+            var direction = "right";
+            var snakeGo = function(){
+                gamestatus = "go"            
+                var changeleft = 0;
+                var changetop = 0;
+                switch(direction){
+                    case "right":
+                        changeleft=1;
+                        changetop=0;
+                        break;
+                    case "left":
+                        changeleft=-1;
+                        changetop=0;
+                        break;
+                    case "up":
+                        changeleft=0;
+                        changetop=-1;
+                        break;
+                    case "down":
+                        changeleft=0;
+                        changetop=1;
+                        break;
+                    default:
+                        break;
+                }
+
+                snakex += changeleft;
+                snakey += changetop;
+                if(snakex<1||snakex>25||snakey<1||snakey>25){
+                    alert("Game Over");
+                    clearInterval(gluSnake);
+                    return false;
+                }
+                
+                var slen = Snake.length;
+                for(var i=0;i<slen-1;i++){
+                    Snake[i].style.left = Snake[i+1].style.left;
+                    Snake[i].style.top = Snake[i+1].style.top; 
+                }
+                Snake[slen-1].style.left = (snakex-1)*nodesize + "px";
+                Snake[slen-1].style.top = (snakey-1)*nodesize + "px";
+
+                for(var i=0;i<slen-1;i++){
+                    if(Snake[slen-1].style.left == Snake[i].style.left&&Snake[slen-1].style.top == Snake[i].style.top){
+                        alert("Game Over");
+                        clearInterval(gluSnake);
+                        return false;
+                    }
+                }
+            }                 
+
+            // 游戏状态设为全局变量
+            gamestatus = "pause";
+            window.onload = function(){
+                shapeSnake(5);
+                showfruit();
+                document.onkeydown = function(e){
+                    if(gamestatus=="pause"){
+                        gamestatus="go"
+                        // 循环设为全局变量         
+                        gluSnake = setInterval("snakeGo()",300);
+                        return null;
+                    }
+
+                    var key = e.keyCode;
+                    switch(key){
+                        case 37:
+                        case 65:
+                            // 添加状态判断以避免按键速度快于循环间隔时导致前进方向掉头的问题
+                            if(direction != "right"&& gamestatus!="wait") {
+                                direction = "left"
+                                gamestatus = "wait"
+                            }
+                            break;
+                        case 38:
+                        case 87:                        
+                            if(direction != "down"&& gamestatus!="wait") {
+                                direction = "up"
+                                gamestatus = "wait"
+                            }
+                            break;
+                        case 39:
+                        case 68:
+                            if(direction != "left"&& gamestatus!="wait") {
+                                direction = "right"
+                                gamestatus = "wait"
+                            }
+                            break;
+                        case 40:
+                        case 83:
+                            if(direction != "up"&& gamestatus!="wait") {
+                                direction = "down"
+                                gamestatus = "wait"
+                            }
+                            break;
+                        case 80:
+                            gamestatus = "pause"
+                            clearInterval(gluSnake);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+            }
+        </script>
+    </body>
+</html>
