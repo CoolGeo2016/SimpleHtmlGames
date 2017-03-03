@@ -34,25 +34,27 @@
                 position: absolute;
             }
             .fruit{
+                box-sizing: border-box;
+                border: 1px solid #eee;
                 width: 20px;
                 height: 20px;
                 border-radius: 20px;
                 position: absolute;
-                background-color: green;
-                animation: fruitcolor 1s;
+                animation: fruitcolor 2s;
                 animation-iteration-count:infinite;
             }
-
+            /*水果图标动画*/
             @keyframes fruitcolor
             {
-                50%{background-color: red}
-                100%{background-color: green}
+                0%{background-color: hotpink}
+                50%{background-color: darkviolet}
+                100%{background-color: hotpink}
             }
         </style>
     </head>
     <body>
         <div id="GSnake">
-        <span id="Gameinfo">提示：按任意键开始游戏 && 按"P"键暂停/继续游戏</span>
+        <span id="Gameinfo">提示：按任意键开始游戏 && 按"P"键暂停游戏</span>
         </div>
         <script>
             //构建游戏背景面板
@@ -61,6 +63,7 @@
                 var trr = document.createElement("tr");
                 for(var j = 0;j<25;j++){
                     var tdd = document.createElement("td");
+                    tdd.title = '('+(j+1)+','+(i+1)+')';
                     trr.appendChild(tdd);
                 }
                 board.appendChild(trr);
@@ -68,44 +71,50 @@
             var gsnake = document.getElementById("GSnake");
             var gameinfo = document.getElementById("Gameinfo");
             gsnake.insertBefore(board,gameinfo);
-            
-            // 构建蛇身
-            var snakex = 0;
+            //贪吃蛇运动部分
+            var snakex = 0;//蛇头部坐标
             var snakey = 0;
-            var fruitx = 0;
+            var fruit = null;
+            var fruitx = 0;//水果坐标
             var fruity = 0;
             var startposition = [3,3];
             var Snake = [];
             var nodesize = 20;
-            var shapeSnake = function(len){
-                // 初始长度不大于22
-                len = len>22?22:len;
-                for(var i=0;i<len;i++){
-                    var snakenode = document.createElement("div");
-                    snakenode.className = "snakenode";
-                    snakenode.style.left = (startposition[0]-1+i)*nodesize + "px";
-                    snakenode.style.top = (startposition[1]-1)*nodesize + "px";
-                    snakenode.style.backgroundColor = i==len-1?"blue":"lightblue";
+            // 增加节点，head为true时增加头部节点
+            var createNode = function(x,y,head){
+                var snakenode = document.createElement("div");
+                snakenode.className = "snakenode";
+                snakenode.style.left = (x-1)*nodesize + "px";
+                snakenode.style.top = (y-1)*nodesize + "px";
+                snakenode.style.backgroundColor = head?"blue":"lightblue";
+                return snakenode;
+            }
+            // 构建蛇身
+            var shapeSnake = function(){
+                for(var i=0;i<5;i++){
+                    //蛇身初始方向向右
+                    var snakenode = createNode(startposition[0]+i,startposition[1],i==4);                    
                     Snake.push(snakenode);
                     gsnake.appendChild(snakenode);
                 }
-                snakex = startposition[0]+len-1;
+                // 蛇头部坐标
+                snakex = startposition[0]+4;
                 snakey = startposition[1]
             }
-
+            // 放置水果
             var showfruit = function(){
-                var fruit = document.createElement("div");
-                fruit.className = "fruit";
-                fruitx = parseInt(Math.random()*24);
-                fruity = parseInt(Math.random()*24);
-                fruit.style.left = (fruitx)*nodesize + "px";
-                fruit.style.top = (fruity)*nodesize + "px";
-                gsnake.appendChild(fruit);
-            }
-
-            
-            // 蛇头部运动
-            var direction = "right";
+                if(!fruit){
+                    fruit = document.createElement("div");                    
+                    fruit.className = "fruit";
+                    gsnake.appendChild(fruit);
+                }                
+                fruitx = parseInt(Math.random()*24)+1;
+                fruity = parseInt(Math.random()*24)+1;                
+                fruit.style.left = (fruitx-1)*nodesize + "px";
+                fruit.style.top = (fruity-1)*nodesize + "px";
+            }            
+            // 蛇开始运动
+            var direction = "right";//初始运动方向向右
             var snakeGo = function(){
                 gamestatus = "go"            
                 var changeleft = 0;
@@ -130,7 +139,7 @@
                     default:
                         break;
                 }
-
+                // 判断撞到墙壁
                 snakex += changeleft;
                 snakey += changetop;
                 if(snakex<1||snakex>25||snakey<1||snakey>25){
@@ -138,28 +147,39 @@
                     clearInterval(gluSnake);
                     return false;
                 }
-                
                 var slen = Snake.length;
-                for(var i=0;i<slen-1;i++){
-                    Snake[i].style.left = Snake[i+1].style.left;
-                    Snake[i].style.top = Snake[i+1].style.top; 
-                }
-                Snake[slen-1].style.left = (snakex-1)*nodesize + "px";
-                Snake[slen-1].style.top = (snakey-1)*nodesize + "px";
-
-                for(var i=0;i<slen-1;i++){
-                    if(Snake[slen-1].style.left == Snake[i].style.left&&Snake[slen-1].style.top == Snake[i].style.top){
+                // 判断吃到蛇身                
+                for(var i=1;i<slen-1;i++){
+                    if((snakex-1)*nodesize + "px" == Snake[i].style.left&&(snakey-1)*nodesize + "px" == Snake[i].style.top){
                         alert("Game Over");
                         clearInterval(gluSnake);
                         return false;
                     }
+                }      
+                // 记录蛇尾坐标
+                var lastx = parseInt(Snake[0].style.left)/20+1
+                var lasty = parseInt(Snake[0].style.top)/20+1
+                // 移动蛇身
+                for(var i=0;i<slen-1;i++){
+                    Snake[i].style.left = Snake[i+1].style.left;
+                    Snake[i].style.top = Snake[i+1].style.top; 
                 }
+                // 吃到水果则在原蛇尾位置增加节点并重新放置水果
+                if(snakex==fruitx&&snakey==fruity){
+                    slen+=1;
+                    var snakenode = createNode(lastx,lasty,false);                    
+                    Snake.unshift(snakenode);
+                    gsnake.appendChild(snakenode);
+                    showfruit();
+                }
+                Snake[slen-1].style.left = (snakex-1)*nodesize + "px";
+                Snake[slen-1].style.top = (snakey-1)*nodesize + "px";
             }                 
 
             // 游戏状态设为全局变量
             gamestatus = "pause";
             window.onload = function(){
-                shapeSnake(5);
+                shapeSnake();
                 showfruit();
                 document.onkeydown = function(e){
                     if(gamestatus=="pause"){
@@ -168,7 +188,6 @@
                         gluSnake = setInterval("snakeGo()",300);
                         return null;
                     }
-
                     var key = e.keyCode;
                     switch(key){
                         case 37:
@@ -208,7 +227,6 @@
                             break;
                     }
                 }
-
             }
         </script>
     </body>
