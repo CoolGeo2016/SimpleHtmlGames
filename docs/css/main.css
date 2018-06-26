@@ -1,0 +1,38 @@
+.main{
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    background-size: cover;
+    background-image: url(../img/coffee.jpg);
+}
+.content{    
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    margin: 20px;
+}
+.content .item{
+    float: left;
+    width: 100px;
+    height: 60px;
+    min-width: 60px;
+    margin: 0 auto;
+    background: linear-gradient(#dddce2, #6e6970);
+    border-radius: 5px;
+    line-height: 60px;
+    text-align: center;
+}
+
+.item a{
+    color: #fff;
+    display: inline-block;
+    flex: 0 0 290px;
+    width: 100px;
+    height: 60px;
+    text-decoration: none;
+    font-weight: bold;
+}

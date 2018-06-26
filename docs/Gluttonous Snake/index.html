@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Gluttonous Snake</title>
+    <style>
+        .main {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            right: 0px;
+            bottom: 0px;
+            background-size: cover;
+            background-image: url(../img/coffee.jpg);
+        }
+
+        .panel {
+            width: 520px;
+            height: 612px;
+            top: 50%;
+            padding: 10px;
+            border-radius: 5px;
+            margin: -316px auto 0;
+            background: #fff;
+            position: relative;
+        }
+
+        #GSnake {
+            width: 500px;
+            height: 500px;
+            position: relative;
+        }
+
+        /*游戏面板*/
+
+        table {
+            border-collapse: collapse;
+        }
+
+        table tr {
+            height: 20px;
+        }
+
+        table td {
+            width: 20px;
+            border: 1px solid #ccc;
+        }
+
+        table tr:nth-child(even),
+        table td:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /*贪吃蛇节点*/
+
+        .snakenode {
+            box-sizing: border-box;
+            border: 1px solid #fff;
+            width: 20px;
+            height: 20px;
+            position: absolute;
+        }
+
+        .fruit {
+            box-sizing: border-box;
+            border: 1px solid #eee;
+            width: 20px;
+            height: 20px;
+            border-radius: 20px;
+            position: absolute;
+            animation: fruitcolor 2s;
+            animation-iteration-count: infinite;
+        }
+
+        /*水果图标动画*/
+
+        @keyframes fruitcolor {
+            0% {
+                background-color: hotpink
+            }
+            50% {
+                background-color: darkviolet
+            }
+            100% {
+                background-color: hotpink
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main">
+        <div class="panel">
+            <h1>贪吃蛇</h1>
+            <div id="GSnake">
+                <span id="Gameinfo">提示：按任意键开始游戏 && 按"P"键暂停游戏</span>
+            </div>
+        </div>
+    </div>
+    <script>
+        //构建游戏背景面板
+        var board = document.createElement("table");
+        for (var i = 0; i < 25; i++) {
+            var trr = document.createElement("tr");
+            for (var j = 0; j < 25; j++) {
+                var tdd = document.createElement("td");
+                tdd.title = '(' + (j + 1) + ',' + (i + 1) + ')';
+                trr.appendChild(tdd);
+            }
+            board.appendChild(trr);
+        }
+        var gsnake = document.getElementById("GSnake");
+        var gameinfo = document.getElementById("Gameinfo");
+        gsnake.insertBefore(board, gameinfo);
+        //贪吃蛇运动部分
+        var snakex = 0; //蛇头部坐标
+        var snakey = 0;
+        var fruit = null;
+        var fruitx = 0; //水果坐标
+        var fruity = 0;
+        var startposition = [3, 3];
+        var Snake = [];
+        var nodesize = 20;
+        // 增加节点，head为true时增加头部节点
+        var createNode = function (x, y, head) {
+            var snakenode = document.createElement("div");
+            snakenode.className = "snakenode";
+            snakenode.style.left = (x - 1) * nodesize + "px";
+            snakenode.style.top = (y - 1) * nodesize + "px";
+            snakenode.style.backgroundColor = head ? "blue" : "lightblue";
+            return snakenode;
+        }
+        // 构建蛇身
+        var shapeSnake = function () {
+            for (var i = 0; i < 5; i++) {
+                //蛇身初始方向向右
+                var snakenode = createNode(startposition[0] + i, startposition[1], i == 4);
+                Snake.push(snakenode);
+                gsnake.appendChild(snakenode);
+            }
+            // 蛇头部坐标
+            snakex = startposition[0] + 4;
+            snakey = startposition[1]
+        }
+        // 放置水果
+        var showfruit = function () {
+            if (!fruit) {
+                fruit = document.createElement("div");
+                fruit.className = "fruit";
+                gsnake.appendChild(fruit);
+            }
+            fruitx = parseInt(Math.random() * 24) + 1;
+            fruity = parseInt(Math.random() * 24) + 1;
+            fruit.style.left = (fruitx - 1) * nodesize + "px";
+            fruit.style.top = (fruity - 1) * nodesize + "px";
+        }
+        // 蛇开始运动
+        var direction = "right"; //初始运动方向向右
+        var snakeGo = function () {
+            gamestatus = "go"
+            var changeleft = 0;
+            var changetop = 0;
+            switch (direction) {
+                case "right":
+                    changeleft = 1;
+                    changetop = 0;
+                    break;
+                case "left":
+                    changeleft = -1;
+                    changetop = 0;
+                    break;
+                case "up":
+                    changeleft = 0;
+                    changetop = -1;
+                    break;
+                case "down":
+                    changeleft = 0;
+                    changetop = 1;
+                    break;
+                default:
+                    break;
+            }
+            // 判断撞到墙壁
+            snakex += changeleft;
+            snakey += changetop;
+            if (snakex < 1 || snakex > 25 || snakey < 1 || snakey > 25) {
+                alert("Game Over");
+                clearInterval(gluSnake);
+                return false;
+            }
+            var slen = Snake.length;
+            // 判断吃到蛇身                
+            for (var i = 1; i < slen - 1; i++) {
+                if ((snakex - 1) * nodesize + "px" == Snake[i].style.left && (snakey - 1) * nodesize + "px" ==
+                    Snake[i].style.top) {
+                    alert("Game Over");
+                    clearInterval(gluSnake);
+                    return false;
+                }
+            }
+            // 记录蛇尾坐标
+            var lastx = parseInt(Snake[0].style.left) / 20 + 1
+            var lasty = parseInt(Snake[0].style.top) / 20 + 1
+            // 移动蛇身
+            for (var i = 0; i < slen - 1; i++) {
+                Snake[i].style.left = Snake[i + 1].style.left;
+                Snake[i].style.top = Snake[i + 1].style.top;
+            }
+            // 吃到水果则在原蛇尾位置增加节点并重新放置水果
+            if (snakex == fruitx && snakey == fruity) {
+                slen += 1;
+                var snakenode = createNode(lastx, lasty, false);
+                Snake.unshift(snakenode);
+                gsnake.appendChild(snakenode);
+                showfruit();
+            }
+            Snake[slen - 1].style.left = (snakex - 1) * nodesize + "px";
+            Snake[slen - 1].style.top = (snakey - 1) * nodesize + "px";
+        }
+
+        // 游戏状态设为全局变量
+        gamestatus = "pause";
+        window.onload = function () {
+            shapeSnake();
+            showfruit();
+            document.onkeydown = function (e) {
+                if (gamestatus == "pause") {
+                    gamestatus = "go"
+                    // 循环设为全局变量         
+                    gluSnake = setInterval("snakeGo()", 300);
+                    return null;
+                }
+                var key = e.keyCode;
+                switch (key) {
+                    case 37:
+                    case 65:
+                        // 添加状态判断以避免按键速度快于循环间隔时导致前进方向掉头的问题
+                        if (direction != "right" && gamestatus != "wait") {
+                            direction = "left"
+                            gamestatus = "wait"
+                        }
+                        break;
+                    case 38:
+                    case 87:
+                        if (direction != "down" && gamestatus != "wait") {
+                            direction = "up"
+                            gamestatus = "wait"
+                        }
+                        break;
+                    case 39:
+                    case 68:
+                        if (direction != "left" && gamestatus != "wait") {
+                            direction = "right"
+                            gamestatus = "wait"
+                        }
+                        break;
+                    case 40:
+                    case 83:
+                        if (direction != "up" && gamestatus != "wait") {
+                            direction = "down"
+                            gamestatus = "wait"
+                        }
+                        break;
+                    case 80:
+                        gamestatus = "pause"
+                        clearInterval(gluSnake);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
